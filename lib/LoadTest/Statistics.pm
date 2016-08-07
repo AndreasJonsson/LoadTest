@@ -7,6 +7,7 @@ use IO::File;
 use Fcntl qw(:DEFAULT :flock);
 use Carp;
 use Time::HiRes qw(gettimeofday);
+use Math::BigInt;
 
 has 'fh' => (
     is => 'ro',
@@ -15,7 +16,7 @@ has 'fh' => (
 
 has 'id' => (
     is => 'ro',
-    isa => 'String'
+    isa => 'Str'
     );
 
 use constant {
@@ -42,6 +43,14 @@ sub start {
     ($self->{ts}, $self->{us}) = gettimeofday;
 }
 
+sub _toBigInt {
+    my ($ts, $us) = @_;
+    my $t = Math::BigInt->new($ts);
+    $t->bmul(1000000);
+    $t->badd($us);
+    return $t;
+}
+
 sub stop {
     my $self = shift;
 
@@ -50,28 +59,24 @@ sub stop {
     }
     $self->{state} = INACTIVE;
     (my $ts, my $us) = gettimeofday;
-    my $us_diff = $us - $self->{us};
-    my $ts_diff;
-    if ($us_diff < 0) {
-        $ts_diff = -1;
-        $us_diff = 1000000 + $us_diff;
-    } else {
-        $ts_diff = 0;
-    }
-    $ts_diff += $ts - $self->{ts};
-    say $self->{fh}, $self->id . ' ' . $ts_diff;
+    my $t1 = _toBigInt($self->{ts}, $self->{us});
+    my $t2 = _toBigInt($ts, $us);
+    my $diff = $t2->bsub($t1);
+    $self->_lock();
+    $self->{fh}->say($self->id . ' ' . $diff);
+    $self->_unlock();
 }
 
 sub _lock {
     my $self = shift;
 
-    $self->fh->fcntl( LOCK_EX );
+    $self->fh->fcntl( LOCK_EX, 0 );
 }
 
 sub _unlock {
     my $self = shift;
 
-    $self->fh->fcntl( LOCK_UN );
+    $self->fh->fcntl( LOCK_UN, 0 );
 }
 
 __PACKAGE__->meta->make_immutable;

@@ -21,18 +21,28 @@ has 'stats' => (
     isa => 'LoadTest::Statistics'
     );
 
+has 'config' => (
+    is => 'ro',
+    isa => 'LoadTest::Config'
+    );
+
 sub BUILD {
     my $self = shift;
 
-    my $th = threads->create('init', $self);
+    my $th = threads->create('run', $self);
 
     $self->{mech} = WWW::Mechanize->new();
 
     $self->{th} = $th;
 }
 
-sub init {
+sub run {
     my $self = shift;
+
+    foreach my $step (@{$self->{steps}}) {
+        $step->scenario($self);
+        $step->run();
+    }
 }
 
 sub join {
