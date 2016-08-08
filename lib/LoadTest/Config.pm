@@ -3,6 +3,7 @@ package LoadTest::Config;
 use namespace::autoclean;
 use Moose;
 use YAML::Syck;
+use Data::Dumper;
 
 has 'configFile' => (
     is => 'ro',
@@ -17,9 +18,11 @@ has 'configData' => (
 sub BUILD {
     my $self = shift;
 
-    my %data = LoadFile($self->{configFile});
+    my $data = LoadFile($self->{configFile});
 
-    $self->configData(\%data);
+    print Dumper($data);
+
+    $self->configData($data);
     $self->configFile->close();
 }
 

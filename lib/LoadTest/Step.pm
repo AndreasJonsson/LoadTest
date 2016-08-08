@@ -22,11 +22,6 @@ has 'scenario' => (
         'config' => 'config' }
     );
 
-has 'mech' => (
-    is => 'ro',
-    isa => 'WWW::Mechanize',
-    );
-
 has 'delay_distribution' => (
     is => 'ro',
     isa => 'CodeRef'
