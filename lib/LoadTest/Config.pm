@@ -20,8 +20,6 @@ sub BUILD {
 
     my $data = LoadFile($self->{configFile});
 
-    print Dumper($data);
-
     $self->configData($data);
     $self->configFile->close();
 }

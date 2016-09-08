@@ -6,6 +6,8 @@ use WWW::Mechanize;
 use HTTP::Response;
 use Time::HiRes qw(usleep);
 use Carp;
+use Data::Dumper;
+use Number::Format;
 
 has 'id' => (
     is => 'ro',
@@ -17,7 +19,7 @@ has 'scenario' => (
     isa => 'LoadTest::Scenario',
     handles => {
         'tid' => 'id',
-        'mechanize' => 'mechanize',
+        'mech' => 'mech',
         'stats' => 'stats',
         'config' => 'config' }
     );
@@ -27,13 +29,31 @@ has 'delay_distribution' => (
     isa => 'CodeRef'
     );
 
+has 'opac_uri' => (
+    is => 'rw',
+    isa => 'Str'
+    );
+
+has 'intra_uri' => (
+    is => 'rw',
+    isa => 'Str'
+    );
+
 sub BUILD {
     my $self = shift;
+
+    $self->opac_uri($self->config->{configData}->{opac_uri});
+    $self->intra_uri($self->config->{configData}->{intra_uri});
+
+    $self->{nf} = new Number::Format();
 }
 
 sub _wait {
     my $self = shift;
     my $t = $self->{delay_distribution}->();
+
+    print STDERR "Waiting " . $self->id . " " . $self->{nf}->format_number($t/1e6) . "s\n";
+
     usleep($t);
 }
 
@@ -42,9 +62,9 @@ sub run {
 
     $self->_wait();
 
-    $self->stats->start();
+    $self->stats->start($self->scenario->id, $self->id);
     my $resp = $self->runStep();
-    $self->stats->stop();
+    $self->stats->stop($self->scenario->id, $self->id);
 
     $self->checkResp( $resp );
 }
@@ -52,6 +72,7 @@ sub run {
 sub checkResp {
     my $self = shift;
     my $resp = shift;
+
     if ($resp->code != 200) {
         carp "Response code: " . $resp->code;
     }
@@ -62,6 +83,25 @@ sub runStep {
     say $self->tid . " step " . $self->id . " running";
     return HTTP::Response->new( 200 );
 }
+
+sub form_by_action {
+    my $self = shift;
+    my $action = shift;
+
+    my $action_re = quotemeta($action) . '$';
+    my $n = 1;
+
+    for my $f in ($self->mech->forms) {
+        my $form = $self->mech->form_number( $n );
+        if ($form->action =~ /$action_re/) {
+            return $n;
+        }
+        $n++
+    }
+
+    return undef;
+}
+
 
 __PACKAGE__->meta->make_immutable;
 

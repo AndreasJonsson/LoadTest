@@ -35,9 +35,11 @@ sub BUILD {
 
 sub start {
     my $self = shift;
+    my $scenario_id = shift;
+    my $step_id = shift;
 
     if ($self->{state} != INACTIVE) {
-        croak "start called in wrong state!";
+        croak "start called in wrong state! (scenario_id: $scenario_id, step_id: $step_id)";
     }
     $self->{state} = ACTIVE;
     ($self->{ts}, $self->{us}) = gettimeofday;
@@ -53,9 +55,11 @@ sub _toBigInt {
 
 sub stop {
     my $self = shift;
+    my $scenario_id = shift;
+    my $step_id = shift;
 
     if ($self->{state} != ACTIVE) {
-        croak "stop called in wrong state!";
+        croak "stop called in wrong state! (scenario_id: $scenario_id, step_id: $step_id)";
     }
     $self->{state} = INACTIVE;
     (my $ts, my $us) = gettimeofday;
@@ -63,7 +67,7 @@ sub stop {
     my $t2 = _toBigInt($ts, $us);
     my $diff = $t2->bsub($t1);
     $self->_lock();
-    $self->{fh}->say($self->id . ' ' . $diff);
+    $self->{fh}->say($scenario_id . ' ' . $step_id . ' '. $diff);
     $self->_unlock();
 }
 

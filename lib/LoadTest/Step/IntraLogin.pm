@@ -1,4 +1,4 @@
-package LoadTest::Step::KohaOpacLogin;
+package LoadTest::Step::IntraLogin;
 
 use namespace::autoclean;
 use Moose;
@@ -21,22 +21,22 @@ has 'password' => (
 sub BUILD {
     my $self = shift;
 
-    $self->userid  ($self->config->{configData}->{login}->{userid}  );
-    $self->password($self->config->{configData}->{login}->{password});
+    $self->userid  ($self->config->{configData}->{intra_login}->{userid}  );
+    $self->password($self->config->{configData}->{intra_login}->{password});
 }
 
 sub runStep {
     my $self = shift;
 
-    my $resp = $self->mech->submit_form( 'form_id' => 'auth',
+    my $resp = $self->mech->submit_form( 'form_id' => 'loginform',
                                          'fields' => {
                                              'userid' => $self->userid,
                                              'password' => $self->password
                                          } );
 
-    my $logoutLink = $self->mech->find_link( 'id' => 'logout' );
+    my $circulationLink = $self->mech->find_link( 'class' => 'icon_general icon_circulation' );
 
-    if (!defined($logoutLink)) {
+    if (!defined($circulationLink)) {
         croak "Login failed!";
     }
 

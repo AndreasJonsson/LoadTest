@@ -12,7 +12,7 @@ has 'id' => (
     );
 
 has 'steps' => (
-    is => 'ro',
+    is => 'rw',
     isa => 'ArrayRef[LoadTest::Step]'
     );
 
@@ -26,22 +26,53 @@ has 'config' => (
     isa => 'LoadTest::Config'
     );
 
+has 'mech' => (
+    is => 'ro',
+    isa => 'WWW::Mechanize'
+    );
+
+has 'scenarioConf' => (
+    is => 'ro',
+    isa => 'HashRef'
+    );
+
 sub BUILD {
     my $self = shift;
 
-    my $th = threads->create('run', $self);
-
-    $self->{mech} = WWW::Mechanize->new();
-
-    $self->{th} = $th;
 }
 
 sub run {
     my $self = shift;
 
+    my $th = threads->create('_run', $self);
+
+    $self->{th} = $th;
+}
+
+sub _run {
+    my $self = shift;
+
+    my $startTime = time();
+
     foreach my $step (@{$self->{steps}}) {
         $step->scenario($self);
         $step->run();
+        if (defined($self->scenarioConf->{timelimit}) &&
+             time() - $startTime > $self->scenarioConf->{timelimit} ) {
+            last;
+        }
+    }
+
+    if (defined($self->scenarioConf->{timelimit})) {
+        my $start = defined($self->scenarioConf->{repeat_from}) ? $self->scenarioConf->{repeat_from} : 0;
+        my $i = $start;
+        while ( time() - $startTime <= $self->scenarioConf->{timelimit} ) {
+            my $step = $self->{steps}->[$i];
+            $step->run();
+            if (++$i >= scalar(@{$self->{steps}}) ) {
+                $i = $start;
+            }
+        }
     }
 }
 
