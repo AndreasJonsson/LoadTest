@@ -22,7 +22,7 @@ sub BUILD {
 sub runStep {
     my $self = shift;
 
-    my $form_n = $self->mech->form_by_action('/circulation.pl');
+    my $form_n = $self->form_by_action('/circulation.pl');
 
     die "No circulation form!" unless defined($form_n);
 

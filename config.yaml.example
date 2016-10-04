@@ -1,0 +1,104 @@
+---
+logfile: logfile-2-15-g.txt
+login:
+  userid: 'KohaTestBorrower'
+  password: 'password'
+intra_login:
+  userid: 'KohaTestLibrarian'
+  password: 'password'
+search:
+  searchterm: 'arkitektur'
+searchbrowse:
+  page: 7
+searchselecttitle:
+  titlenumber: 5
+intrasearch:
+  searchterm: 'word'
+circulation:
+  borrower_cardnumber: 1234
+  barcodes:
+    - 200200081851A
+    - 20040008185D3
+    - 20019978185AC
+    - 20039988185A2
+opac_uri: 'https://hostname'
+intra_uri: 'https://hostname'
+scenarios:
+  -
+   id: zebrasearch
+   instances: 1
+   repeat_from: 0
+   timelimit: 3000
+   steps:
+     -
+       id: search
+       classname: ZebraSearch
+       lambda: 1e-7
+  -
+   id: intra
+   instances: 2
+   repeat_from: 2
+   timelimit: 3000
+   steps:
+    -
+      id: main_first
+      classname: IntraMainPage
+      lambda: 1e-7
+    -
+      id: login
+      classname: IntraLogin
+      lambda: 0.5e-7
+    -
+      id: gotosearch
+      classname: IntraGotoSearch
+      lambda: 0.5e-7
+    -
+      id: search
+      classname: IntraSearch
+      lambda: 0.5e-7
+    -
+      id: main
+      classname: IntraMainPage
+      lambda: 0.5e-7
+    -
+      id: circulation_select_patron
+      classname: CirculateSelectPatron
+      lambda: 0.5e-7
+    -
+      id: circulation_issue
+      classname: CirculateIssueLoan
+      lambda: 0.5e-7
+    -
+      id: circulation_return
+      classname: CirculateReturnLoan
+      lambda: 0.5e-7
+  -
+   id: opac
+   instances: 15
+   timelimit: 3000
+   repeat_from: 2
+   steps:
+     -
+       id: main_first
+       classname: MainPage
+       lambda: 1e-7
+     -
+       id: login
+       classname: KohaOpacLogin
+       lambda: 1e-7
+     -
+       id: search
+       classname: Search
+       lambda: 1e-7
+     -
+       id: searchbrowse
+       classname: SearchBrowse
+       lambda: 1e-7
+     -
+       id: select_title
+       classname: SearchSelectTitle
+       lambda: 1e-7
+     -
+       id: main
+       classname: MainPage
+       lambda: 1e-7
